@@ -3,6 +3,8 @@ import 'package:camera_app/autozoom.dart';
 
 import 'package:camera_app/test.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:camera_app/image_provider.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -11,7 +13,12 @@ Future<void> main() async {
 
   cameras = await availableCameras();
 
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ImageProviderLocal(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
