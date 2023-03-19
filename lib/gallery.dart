@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -35,9 +34,9 @@ class _GalleryPageState extends State<GalleryPage> {
           child: _imagePaths.isNotEmpty
               ? GridView.builder(
                   shrinkWrap: true,
-                  physics: ClampingScrollPhysics(),
+                  physics: const ClampingScrollPhysics(),
                   itemCount: _imagePaths.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 4 / 3,
                   ),
@@ -59,7 +58,7 @@ class _GalleryPageState extends State<GalleryPage> {
                             backgroundColor: Colors.black45,
                             title: Text(
                               'Item ${1 + index}',
-                              style: TextStyle(fontSize: 16.0),
+                              style: const TextStyle(fontSize: 16.0),
                             ),
                           ),
                           child: Container(
@@ -67,8 +66,8 @@ class _GalleryPageState extends State<GalleryPage> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(15),
                             ),
-                            child: Image.asset(
-                              _imagePaths[index],
+                            child: Image.file(
+                              File(_imagePaths[index]),
                               fit: BoxFit.cover,
                             ),
                           ),

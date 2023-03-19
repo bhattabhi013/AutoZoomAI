@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:camera/camera.dart';
 import 'package:camera_app/gallery.dart';
 import 'package:camera_app/image_provider.dart';
+import 'package:camera_app/painters/object_detector_painter.dart';
 import 'package:camera_app/preview.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
@@ -18,18 +21,24 @@ class CameraPage extends StatefulWidget {
 }
 
 class _CameraPageState extends State<CameraPage> {
-  late final objectDetector;
   List<File> images = [];
   File? _imageFile;
   List<String> _imagePaths = [];
   late CameraController _cameraController;
   bool _isRearCameraSelected = true;
-
+  late ObjectDetector _objectDetector;
+  bool _canProcess = false;
+  bool _isBusy = false;
+  late bool _isStream;
+  CustomPaint? _customPaint;
+  bool _isDetecting = false;
+  double _zoom = 1.0;
+  late double _maxZoom;
   @override
   void dispose() {
     _cameraController.dispose();
     super.dispose();
-    objectDetector.close();
+    _objectDetector.close();
   }
 
   @override
@@ -37,11 +46,19 @@ class _CameraPageState extends State<CameraPage> {
     super.initState();
     initCamera(widget.cameras![0]);
     getImages(); // to get the captured images from the local dir
+    _initializeDetector(); // initialize the ml kit model
+  }
+
+  void _initializeDetector() async {
     final options = ObjectDetectorOptions(
-        classifyObjects: false,
-        mode: DetectionMode.stream,
-        multipleObjects: false);
-    objectDetector = ObjectDetector(options: options);
+      classifyObjects: false,
+      multipleObjects: false,
+      mode: DetectionMode
+          .stream, // stream for continuous video and single for single shot/gallery pics
+    );
+    _objectDetector = ObjectDetector(options: options);
+    _canProcess = true;
+    _isStream = false;
   }
 
   Future takePicture() async {
@@ -88,6 +105,7 @@ class _CameraPageState extends State<CameraPage> {
         if (!mounted) return;
         setState(() {});
       });
+      _maxZoom = await _cameraController.getMaxZoomLevel();
     } on CameraException catch (e) {
       debugPrint("camera error $e");
     }
@@ -135,6 +153,121 @@ class _CameraPageState extends State<CameraPage> {
 
   void resetZoom() {
     _cameraController.setZoomLevel(1.0);
+    setState(() {
+      _zoom = 1.0;
+    });
+  }
+
+  void showSnackBar(text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        clipBehavior: Clip.hardEdge,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        content: Center(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future _processCameraImage(CameraImage image) async {
+    if (!_isStream) {
+      await _cameraController.stopImageStream();
+    } else {
+      final WriteBuffer allBytes = WriteBuffer();
+      for (final Plane plane in image.planes) {
+        allBytes.putUint8List(plane.bytes);
+      }
+      final bytes = allBytes.done().buffer.asUint8List();
+
+      final Size imageSize =
+          Size(image.width.toDouble(), image.height.toDouble());
+
+      final inputImageFormat =
+          InputImageFormatValue.fromRawValue(image.format.raw) ??
+              InputImageFormat.nv21;
+
+      final planeData = image.planes.map(
+        (Plane plane) {
+          return InputImagePlaneMetadata(
+            bytesPerRow: plane.bytesPerRow,
+            height: plane.height,
+            width: plane.width,
+          );
+        },
+      ).toList();
+
+      final inputImageData = InputImageData(
+        size: imageSize,
+        imageRotation: InputImageRotation.rotation0deg,
+        inputImageFormat: inputImageFormat,
+        planeData: planeData,
+      );
+
+      final inputImage =
+          InputImage.fromBytes(bytes: bytes, inputImageData: inputImageData);
+
+      processImage(inputImage);
+    }
+  }
+
+  Future _stopLiveFeed() async {
+    await _cameraController.stopImageStream();
+    await _cameraController.dispose();
+  }
+
+  Future<void> processImage(InputImage inputImage) async {
+    if (!_canProcess) return;
+    if (_isBusy) return;
+    _isBusy = true;
+    final objects = await _objectDetector.processImage(inputImage);
+    if (objects.isNotEmpty) {
+      final boundingBox = objects[0].boundingBox;
+      zoomFunction(boundingBox);
+      setState(() {
+        _isStream = false;
+      });
+    }
+    // if (inputImage.inputImageData?.size != null &&
+    //     inputImage.inputImageData?.imageRotation != null) {
+    //   final painter = ObjectDetectorPainter(
+    //       objects,
+    //       inputImage.inputImageData!.imageRotation,
+    //       inputImage.inputImageData!.size);
+    //   _customPaint = CustomPaint(painter: painter);
+    // }
+    _isBusy = false;
+  }
+
+  void zoomFunction(Rect boundingBox) async {
+    if (!_isDetecting) return;
+    // double objectHeight = boundingBox.height;
+    // double objectWidth = boundingBox.width;
+    // double screenHeight = MediaQuery.of(context).size.height;
+    // double screenWidth = MediaQuery.of(context).size.width;
+    double minZoom = await _cameraController.getMinZoomLevel();
+    double maxZoom = await _cameraController.getMaxZoomLevel();
+    double currentZoom = _zoom;
+
+    double newZoom = 1.2 * currentZoom + minZoom;
+
+    if (currentZoom != newZoom) {
+      if (newZoom > maxZoom) {
+        showSnackBar("Max zoom reached");
+        newZoom = 1.0;
+      } else {
+        await _cameraController.setZoomLevel(newZoom);
+      }
+      setState(() {
+        _zoom = newZoom;
+      });
+    }
   }
 
   @override
@@ -150,6 +283,30 @@ class _CameraPageState extends State<CameraPage> {
                   child: CircularProgressIndicator(),
                 ),
               ),
+        Container(
+          margin: EdgeInsets.only(
+            top: MediaQuery.of(context).size.height * 0.70,
+            left: MediaQuery.of(context).size.width * 0.05,
+          ),
+          child: IconButton(
+            onPressed: () async {
+              setState(() {
+                _isDetecting = !_isDetecting;
+                _isStream = !_isStream;
+              });
+              if (_isStream) {
+                _cameraController.startImageStream(_processCameraImage);
+              }
+              showSnackBar(
+                  _isDetecting ? "Detecting Objects" : "Detection paused");
+            },
+            icon: Icon(
+              Icons.location_searching,
+              color: _isDetecting ? Colors.green : Colors.white,
+              size: 35,
+            ),
+          ),
+        ),
         Container(
           margin: EdgeInsets.only(
             top: MediaQuery.of(context).size.height * 0.70,
@@ -219,7 +376,7 @@ class _CameraPageState extends State<CameraPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => GalleryPage(),
+                              builder: (context) => const GalleryPage(),
                             ),
                           );
                         },

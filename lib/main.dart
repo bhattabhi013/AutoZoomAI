@@ -1,7 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:camera_app/autozoom.dart';
 
-import 'package:camera_app/test.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:camera_app/image_provider.dart';
@@ -26,7 +25,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'Flutter Camera Demo',
       debugShowCheckedModeBanner: false,
       home: HomePage(),
