@@ -1,5 +1,4 @@
 import 'package:camera/camera.dart';
-// import 'package:camera_app/cameraaa.dart';
 import 'package:flutter/material.dart';
 
 import 'camera.dart';
@@ -23,7 +22,7 @@ class _HomePageState extends State<HomePage> {
             await availableCameras().then((value) => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => CameraPage(cameras: value))));
           },
-          child: const Text("Take a Picture"),
+          child: const Text("AutoZoom AI"),
         )),
       ),
     );

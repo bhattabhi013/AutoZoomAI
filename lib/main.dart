@@ -15,7 +15,7 @@ Future<void> main() async {
   runApp(
     ChangeNotifierProvider(
       create: (context) => ImageProviderLocal(),
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      title: 'Flutter Camera Demo',
+      title: 'AutoZoom AI',
       debugShowCheckedModeBanner: false,
       home: HomePage(),
     );

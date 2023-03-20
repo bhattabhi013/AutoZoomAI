@@ -1,10 +1,8 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:camera/camera.dart';
 import 'package:camera_app/gallery.dart';
 import 'package:camera_app/image_provider.dart';
-import 'package:camera_app/painters/object_detector_painter.dart';
 import 'package:camera_app/preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +28,6 @@ class _CameraPageState extends State<CameraPage> {
   bool _canProcess = false;
   bool _isBusy = false;
   late bool _isStream;
-  CustomPaint? _customPaint;
   bool _isDetecting = false;
   double _zoom = 1.0;
   late double _maxZoom;
@@ -176,7 +173,7 @@ class _CameraPageState extends State<CameraPage> {
     );
   }
 
-  Future _processCameraImage(CameraImage image) async {
+  Future _startProcessing(CameraImage image) async {
     if (!_isStream) {
       await _cameraController.stopImageStream();
     } else {
@@ -217,11 +214,6 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
 
-  Future _stopLiveFeed() async {
-    await _cameraController.stopImageStream();
-    await _cameraController.dispose();
-  }
-
   Future<void> processImage(InputImage inputImage) async {
     if (!_canProcess) return;
     if (_isBusy) return;
@@ -234,23 +226,11 @@ class _CameraPageState extends State<CameraPage> {
         _isStream = false;
       });
     }
-    // if (inputImage.inputImageData?.size != null &&
-    //     inputImage.inputImageData?.imageRotation != null) {
-    //   final painter = ObjectDetectorPainter(
-    //       objects,
-    //       inputImage.inputImageData!.imageRotation,
-    //       inputImage.inputImageData!.size);
-    //   _customPaint = CustomPaint(painter: painter);
-    // }
     _isBusy = false;
   }
 
   void zoomFunction(Rect boundingBox) async {
     if (!_isDetecting) return;
-    // double objectHeight = boundingBox.height;
-    // double objectWidth = boundingBox.width;
-    // double screenHeight = MediaQuery.of(context).size.height;
-    // double screenWidth = MediaQuery.of(context).size.width;
     double minZoom = await _cameraController.getMinZoomLevel();
     double maxZoom = await _cameraController.getMaxZoomLevel();
     double currentZoom = _zoom;
@@ -295,7 +275,7 @@ class _CameraPageState extends State<CameraPage> {
                 _isStream = !_isStream;
               });
               if (_isStream) {
-                _cameraController.startImageStream(_processCameraImage);
+                _cameraController.startImageStream(_startProcessing);
               }
               showSnackBar(
                   _isDetecting ? "Detecting Objects" : "Detection paused");
@@ -333,21 +313,22 @@ class _CameraPageState extends State<CameraPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                        child: IconButton(
-                      padding: EdgeInsets.zero,
-                      iconSize: 30,
-                      icon: Icon(
-                          _isRearCameraSelected
-                              ? CupertinoIcons.switch_camera
-                              : CupertinoIcons.switch_camera_solid,
-                          color: Colors.white),
-                      onPressed: () {
-                        setState(() =>
-                            _isRearCameraSelected = !_isRearCameraSelected);
-                        initCamera(
-                            widget.cameras![_isRearCameraSelected ? 0 : 1]);
-                      },
-                    )),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        iconSize: 30,
+                        icon: Icon(
+                            _isRearCameraSelected
+                                ? CupertinoIcons.switch_camera
+                                : CupertinoIcons.switch_camera_solid,
+                            color: Colors.white),
+                        onPressed: () {
+                          setState(() =>
+                              _isRearCameraSelected = !_isRearCameraSelected);
+                          initCamera(
+                              widget.cameras![_isRearCameraSelected ? 0 : 1]);
+                        },
+                      ),
+                    ),
                     Expanded(
                       child: GestureDetector(
                         onTap: () {

@@ -8,6 +8,7 @@ AutoZoom AI is a Flutter application that uses machine learning and computer vis
 - [Usage](#usage)
 - [Authors](#authors)
 - [Credits](#credits)
+- [Demo](#demo)
 
 ## Features <a name = "features"></a>
 - Automatic object detection: The application uses computer vision algorithms to detect objects in the camera's field of view.
@@ -35,3 +36,7 @@ AutoZoom AI is a Flutter application that uses machine learning and computer vis
 
 ## Credits <a name = "credits"></a>
 AutoZoom AI was developed by me as part of a Flutter programming project. The application uses the [Google's ML Kit Object Detection](https://pub.dev/packages/google_mlkit_object_detection) and the [Camera](https://pub.dev/packages/camera) Flutter plugin.
+
+## Demo <a name = "demo"></a>
+[DEMO](https://youtu.be/odKU5AsooE4)
+
