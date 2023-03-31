@@ -1,9 +1,9 @@
 import 'package:camera/camera.dart';
-import 'package:camera_app/autozoom.dart';
+import 'package:camera_app/screens/autozoom.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:camera_app/image_provider.dart';
+import 'package:camera_app/provider/image_provider.dart';
 
 List<CameraDescription> cameras = [];
 

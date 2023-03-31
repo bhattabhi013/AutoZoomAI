@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:camera/camera.dart';
-import 'package:camera_app/gallery.dart';
-import 'package:camera_app/image_provider.dart';
-import 'package:camera_app/preview.dart';
+import 'package:camera_app/screens/gallery.dart';
+import 'package:camera_app/provider/image_provider.dart';
+import 'package:camera_app/screens/preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';

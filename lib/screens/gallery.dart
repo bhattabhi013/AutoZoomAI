@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:camera/camera.dart';
-import 'package:camera_app/image_provider.dart';
+import 'package:camera_app/provider/image_provider.dart';
 import 'package:provider/provider.dart';
 
-import 'package:camera_app/preview.dart';
+import 'package:camera_app/screens/preview.dart';
 import 'package:flutter/material.dart';
 
 class GalleryPage extends StatefulWidget {
